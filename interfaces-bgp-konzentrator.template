@@ -1,0 +1,60 @@
+# Konfiguration Backbone-Anbindung fuer eigene FFRL Exit-IP
+auto tun-ffrl-uplink
+	iface tun-ffrl-uplink inet static
+	address @@MY_FFRL_EXIT_IPV4@@
+	netmask 255.255.255.255
+	pre-up ip link add $IFACE type dummy
+	post-down ip link del $IFACE
+
+# Konfiguration Backbone-Anbindung Berlin A
+auto  tun-ffrl-ber-a 
+	iface		tun-ffrl-ber-a inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		@@BER_A_GRE_MY_IPV4@@
+	dstaddr		@@BER_A_GRE_BB_IPV4@@
+	endpoint	185.66.195.0 
+	local		@@MY_PUBLIC_IPV4@@
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add @@BER_A_GRE_MY_IPV6@@ dev $IFACE
+
+# Konfiguration Backbone-Anbindung Berlin B
+auto  tun-ffrl-ber-b 
+	iface		tun-ffrl-ber-b inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		@@BER_B_GRE_MY_IPV4@@
+	dstaddr		@@BER_B_GRE_BB_IPV4@@
+	endpoint	185.66.195.1
+	local		@@MY_PUBLIC_IPV4@@
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add @@BER_B_GRE_MY_IPV6@@ dev $IFACE
+
+# Konfiguration Backbone-Anbindung Duesseldorf A
+auto  tun-ffrl-dus-a 
+	iface		tun-ffrl-dus-a inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		@@DUS_A_GRE_MY_IPV4@@
+	dstaddr		@@DUS_A_GRE_BB_IPV4@@
+	endpoint	185.66.193.0
+	local		@@MY_PUBLIC_IPV4@@
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add @@DUS_A_GRE_MY_IPV6@@ dev $IFACE
+
+# Konfiguration Backbone-Anbindung Duesseldorf B
+auto  tun-ffrl-dus-b
+	iface		tun-ffrl-dus-b inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		@@DUS_B_GRE_MY_IPV4@@
+	dstaddr		@@DUS_B_GRE_BB_IPV4@@
+	endpoint	185.66.193.1
+	local		@@MY_PUBLIC_IPV4@@
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add @@DUS_B_GRE_MY_IPV6@@ dev $IFACE
+
