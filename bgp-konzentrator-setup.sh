@@ -13,6 +13,20 @@ function myread {
 }
 
 
+function show_sysctl_config {
+	cat << _EOF > 20-ff-config.conf.${EXT}
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+net.ipv4.tcp_window_scaling = 1
+net.core.rmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 16384 16777216
+net.ipv4.conf.default.rp_filter=2
+net.ipv4.conf.all.rp_filter=2
+_EOF
+
+}
+
 function show_bird_config {
 	cat << _EOF > bird.conf.${EXT}
 router id ${MY_FFRL_EXIT_IPV4};
@@ -306,3 +320,6 @@ show_interfaces
 echo -e "\t\tinterfaces.${EXT}"
 show_ferm_config
 echo -e "\t\tferm.conf.${EXT}"
+show_sysctl_config
+echo -e "\t\t20-ff-config.conf.${EXT}"
+
