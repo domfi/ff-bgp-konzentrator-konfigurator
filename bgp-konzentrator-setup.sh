@@ -8,8 +8,8 @@ EXT=bgp
 function myread {
 	local prompt=$1
 	local default=$2
-	read -p "${prompt} (${default}): " value
-	echo $(sed 's/\//\\\\\//g' <<< ${value:-${default}})
+	read -p "${prompt} (${default}): " v
+	echo ${v:-${default}}
 }
 
 
@@ -18,21 +18,21 @@ function show_sysctl_config {
 net.ipv4.ip_forward=1
 net.ipv6.conf.all.forwarding=1
 net.ipv4.tcp_window_scaling = 1
+net.netfilter.nf_conntrack_max=1337000
 net.core.rmem_max = 16777216
 net.ipv4.tcp_rmem = 4096 87380 16777216
 net.ipv4.tcp_wmem = 4096 16384 16777216
 net.ipv4.conf.default.rp_filter=2
 net.ipv4.conf.all.rp_filter=2
 _EOF
-
 }
 
 function show_bird_config {
 	cat << _EOF > bird.conf.${EXT}
-router id ${MY_FFRL_EXIT_IPV4};
+router id ${my_ffrl_exit_ipv4};
 protocol direct announce {
         table master;
-        import where net ~ [${MY_FFRL_EXIT_IPV4}/32];
+        import where net ~ [${my_ffrl_exit_ipv4}/32];
         interface "tun-ffrl-uplink";
 };
 protocol kernel {
@@ -40,7 +40,7 @@ protocol kernel {
         device routes;
         import none;
         export filter {
-                krt_prefsrc = ${MY_FFRL_EXIT_IPV4};
+                krt_prefsrc = ${my_ffrl_exit_ipv4};
                 accept;
         };
         kernel table 42;
@@ -52,7 +52,7 @@ function is_default() {
         return (net ~ [0.0.0.0/0]);
 };
 template bgp uplink {
-        local as ${MY_AS_NUMBER};
+        local as ${my_as_number};
         import where is_default();
         export where proto = "announce";
 };
@@ -99,24 +99,11 @@ iface		tun-ffrl-ber-a inet tunnel
 	netmask		255.255.255.254
 	address		${BER_A_GRE_MY_IPV4}
 	dstaddr		${BER_A_GRE_BB_IPV4}
-	endpoint	185.66.195.0 
-	local		${MY_PUBLIC_IPV4}
+	endpoint	185.66.195.0
+	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
 	post-up ip -6 addr add ${BER_A_GRE_MY_IPV6} dev \$IFACE
-
-# Konfiguration Backbone-Anbindung Berlin B
-auto  tun-ffrl-ber-b 
-iface	tun-ffrl-ber-b inet tunnel
-	mode		gre
-	netmask		255.255.255.254
-	address		${BER_B_GRE_MY_IPV4}
-	dstaddr		${BER_B_GRE_BB_IPV4}
-	endpoint	185.66.195.1
-	local		${MY_PUBLIC_IPV4}
-	ttl		255
-	mtu		1400
-	post-up ip -6 addr add ${BER_B_GRE_MY_IPV6} dev \$IFACE
 
 # Konfiguration Backbone-Anbindung Duesseldorf A
 auto  tun-ffrl-dus-a 
@@ -126,10 +113,23 @@ iface	tun-ffrl-dus-a inet tunnel
 	address		${DUS_A_GRE_MY_IPV4}
 	dstaddr		${DUS_A_GRE_BB_IPV4}
 	endpoint	185.66.193.0
-	local		${MY_PUBLIC_IPV4}
+	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
 	post-up ip -6 addr add ${DUS_A_GRE_MY_IPV6} dev \$IFACE
+
+# Konfiguration Backbone-Anbindung Berlin B
+auto  tun-ffrl-ber-b 
+iface	tun-ffrl-ber-b inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		${BER_B_GRE_MY_IPV4}
+	dstaddr		${BER_B_GRE_BB_IPV4}
+	endpoint	185.66.195.1
+	local		${my_public_ipv4}
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add ${BER_B_GRE_MY_IPV6} dev \$IFACE
 
 # Konfiguration Backbone-Anbindung Duesseldorf B
 auto  tun-ffrl-dus-b
@@ -139,7 +139,7 @@ iface	tun-ffrl-dus-b inet tunnel
 	address		${DUS_B_GRE_MY_IPV4}
 	dstaddr		${DUS_B_GRE_BB_IPV4}
 	endpoint	185.66.193.1
-	local		${MY_PUBLIC_IPV4}
+	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
 	post-up ip -6 addr add ${DUS_B_GRE_MY_IPV6} dev \$IFACE
@@ -167,15 +167,11 @@ function is_default() {
         return (net ~ [::/0]);
 }
 filter hostroute {
-        if net ~ [2a03:2260:120::/56] then accept;        # Iserlohn
-        if net ~ [2a03:2260:120:100::/56] then accept;    # Altena
-        if net ~ [2a03:2260:120:200::/56] then accept;    # Meinerzhagen
-        if net ~ [2a03:2260:120:300::/56] then accept;    # Hemer
-        if net ~ [2a03:2260:120:400::/56] then accept;    # Luedenscheid
+	if net ~ [${my_ffrl_ipv6}{56,56}] then accept;
         reject;
 }
 template bgp uplink {
-        local as ${MY_AS_NUMBER};
+        local as ${my_as_number};
         import where is_default();
         export filter hostroute;
         gateway recursive;
@@ -219,7 +215,7 @@ domain (ip ip6) {
             proto udp dport 500 ACCEPT;
             proto (esp) ACCEPT;
             proto tcp dport ssh ACCEPT;
-            proto tcp dport ${MY_SSH_PORT} ACCEPT;
+            proto tcp dport ${my_ssh_port} ACCEPT;
         }
         chain OUTPUT {
             policy ACCEPT;
@@ -271,16 +267,19 @@ my_as_number=$(myread "Eigene AS Nummer" "${MY_AS_NUMBER}")
 echo -en "\t" 
 my_ffrl_exit_ipv4=$(myread "Zugewiesene FFRL-IPV4-Exit-Adresse" "${MY_FFRL_EXIT_IPV4}")
 
+echo -en "\t"
+my_ffrl_ipv6=$(myread "Zugewiesenes FFRL-IPV6-Netz" "${MY_FFRL_IPV6_PREFIX}")
+
 # @@MY_PUBLIC_IPV4@@
 # TODO: Adresse automatisch ermitteln
 echo -en "\t" 
 my_public_ipv4=$(myread "Eigene öffentliche IPV4 Adresse" "${MY_PUBLIC_IPV4}")
 
 echo -en "\t"
-MY_SSH_PORT=$(myread "Eigener SSH-Port" "${MY_SSH_PORT}")
+my_ssh_port=$(myread "Eigener SSH-Port" "${MY_SSH_PORT}")
 
 
-TUNNELENDPOINTS="BER_A BER_B DUS_A DUS_B"
+TUNNELENDPOINTS="BER_A DUS_A BER_B DUS_B"
 
 for bb_endpoint in ${TUNNELENDPOINTS}; do 
 	echo -e "\n=== Konfiguration für GRE-Tunnel nach ${bb_endpoint}:"
@@ -308,6 +307,7 @@ for bb_endpoint in ${TUNNELENDPOINTS}; do
 	value=$(eval echo \$${bar})
 	value=$(myread "IPV6 Adresse auf Konzentrator" "${value}") 
 	eval $bar=$value
+
 done
 
 echo -e "\n=== Ausgaben"
