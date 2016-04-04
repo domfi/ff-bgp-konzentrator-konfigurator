@@ -276,8 +276,8 @@ echo -en "\t"
 my_public_ipv4=$(myread "Eigene öffentliche IPV4 Adresse" "${MY_PUBLIC_IPV4}")
 
 echo -en "\t"
-my_ssh_port=$(myread "Eigener SSH-Port" "${MY_SSH_PORT}")
-
+#my_ssh_port=$(myread "Eigener SSH-Port" "${MY_SSH_PORT}")
+my_ssh_port=$(cat /etc/ssh/sshd_config|grep -i ^Port|cut -d" " -f2)
 
 TUNNELENDPOINTS="BER_A DUS_A BER_B DUS_B"
 
