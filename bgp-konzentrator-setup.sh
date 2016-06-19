@@ -74,6 +74,16 @@ protocol bgp ffrl_dus_b from uplink {
         neighbor ${DUS_B_GRE_BB_IPV4} as ${ffrl_as_number};
         preference 110;
 };
+protocol bgp ffrl_fra_a from uplink {
+        source address ${FRA_A_GRE_MY_IPV4};
+        neighbor ${FRA_A_GRE_BB_IPV4} as ${ffrl_as_number};
+        preference 110;
+};
+protocol bgp ffrl_fra_b from uplink {
+        source address ${FRA_B_GRE_MY_IPV4};
+        neighbor ${FRA_B_GRE_BB_IPV4} as ${ffrl_as_number};
+        preference 110;
+};
 _EOF
 }
 
@@ -93,8 +103,8 @@ iface tun-ffrl-uplink inet static
 	post-down ip link del \$IFACE
 
 # Konfiguration Backbone-Anbindung Berlin A
-auto  tun-ffrl-ber-a 
-iface		tun-ffrl-ber-a inet tunnel
+auto tun-ffrl-ber-a 
+iface tun-ffrl-ber-a inet tunnel
 	mode		gre
 	netmask		255.255.255.254
 	address		${BER_A_GRE_MY_IPV4}
@@ -103,11 +113,11 @@ iface		tun-ffrl-ber-a inet tunnel
 	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
-	post-up ip -6 addr add ${BER_A_GRE_MY_IPV6} dev \$IFACE
+	post-up ip -6 addr add ${BER_A_GRE_MY_IPV6}/64 dev \$IFACE
 
 # Konfiguration Backbone-Anbindung Duesseldorf A
-auto  tun-ffrl-dus-a 
-iface	tun-ffrl-dus-a inet tunnel
+auto tun-ffrl-dus-a 
+iface tun-ffrl-dus-a inet tunnel
 	mode		gre
 	netmask		255.255.255.254
 	address		${DUS_A_GRE_MY_IPV4}
@@ -116,11 +126,24 @@ iface	tun-ffrl-dus-a inet tunnel
 	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
-	post-up ip -6 addr add ${DUS_A_GRE_MY_IPV6} dev \$IFACE
+	post-up ip -6 addr add ${DUS_A_GRE_MY_IPV6}/64 dev \$IFACE
+
+# Konfiguration Backbone-Anbindung Frankfurt A
+auto tun-ffrl-fra-a 
+iface tun-ffrl-fra-a inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		${FRA_A_GRE_MY_IPV4}
+	dstaddr		${FRA_A_GRE_BB_IPV4}
+	endpoint	185.66.194.0
+	local		${my_public_ipv4}
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add ${FRA_A_GRE_MY_IPV6}/64 dev \$IFACE
 
 # Konfiguration Backbone-Anbindung Berlin B
-auto  tun-ffrl-ber-b 
-iface	tun-ffrl-ber-b inet tunnel
+auto tun-ffrl-ber-b 
+iface tun-ffrl-ber-b inet tunnel
 	mode		gre
 	netmask		255.255.255.254
 	address		${BER_B_GRE_MY_IPV4}
@@ -129,11 +152,11 @@ iface	tun-ffrl-ber-b inet tunnel
 	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
-	post-up ip -6 addr add ${BER_B_GRE_MY_IPV6} dev \$IFACE
+	post-up ip -6 addr add ${BER_B_GRE_MY_IPV6}/64 dev \$IFACE
 
 # Konfiguration Backbone-Anbindung Duesseldorf B
-auto  tun-ffrl-dus-b
-iface	tun-ffrl-dus-b inet tunnel
+auto tun-ffrl-dus-b
+iface tun-ffrl-dus-b inet tunnel
 	mode		gre
 	netmask		255.255.255.254
 	address		${DUS_B_GRE_MY_IPV4}
@@ -142,7 +165,21 @@ iface	tun-ffrl-dus-b inet tunnel
 	local		${my_public_ipv4}
 	ttl		255
 	mtu		1400
-	post-up ip -6 addr add ${DUS_B_GRE_MY_IPV6} dev \$IFACE
+	post-up ip -6 addr add ${DUS_B_GRE_MY_IPV6}/64 dev \$IFACE
+
+# Konfiguration Backbone-Anbindung Frankfurt B
+auto tun-ffrl-fra-b 
+iface tun-ffrl-fra-b inet tunnel
+	mode		gre
+	netmask		255.255.255.254
+	address		${FRA_B_GRE_MY_IPV4}
+	dstaddr		${FRA_B_GRE_BB_IPV4}
+	endpoint	185.66.194.1
+	local		${my_public_ipv4}
+	ttl		255
+	mtu		1400
+	post-up ip -6 addr add ${FRA_B_GRE_MY_IPV6}/64 dev \$IFACE
+
 _EOF
 }
 
@@ -196,6 +233,16 @@ protocol bgp ffrl_dus_b from uplink {
         description "Rheinland Backbone Duesseldorf B";
         source address ${DUS_B_GRE_MY_IPV6};
         neighbor ${DUS_B_GRE_BB_IPV6} as ${ffrl_as_number};
+}
+protocol bgp ffrl_fra_a from uplink {
+        description "Rheinland Backbone Frankfurt A";
+        source address ${FRA_A_GRE_MY_IPV6};
+        neighbor ${FRA_A_GRE_BB_IPV6} as ${ffrl_as_number};
+}
+protocol bgp ffrl_fra_b from uplink {
+        description "Rheinland Backbone Frankfurt B";
+        source address ${FRA_B_GRE_MY_IPV6};
+        neighbor ${FRA_B_GRE_BB_IPV6} as ${ffrl_as_number};
 }
 _EOF
 }
@@ -279,7 +326,7 @@ echo -en "\t"
 #my_ssh_port=$(myread "Eigener SSH-Port" "${MY_SSH_PORT}")
 my_ssh_port=$(cat /etc/ssh/sshd_config|grep -i ^Port|cut -d" " -f2)
 
-TUNNELENDPOINTS="BER_A DUS_A BER_B DUS_B"
+TUNNELENDPOINTS="BER_A DUS_A BER_B DUS_B FRA_A FRA_B"
 
 for bb_endpoint in ${TUNNELENDPOINTS}; do 
 	echo -e "\n=== Konfiguration für GRE-Tunnel nach ${bb_endpoint}:"
