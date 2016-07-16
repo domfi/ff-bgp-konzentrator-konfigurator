@@ -57,7 +57,7 @@ template bgp uplink {
         export where proto = "announce";
 };
 protocol bgp ffrl_ber_a from uplink {
-        source address ${BER_A_GRE_MY_IPV4}
+        source address ${BER_A_GRE_MY_IPV4};
         neighbor ${BER_A_GRE_BB_IPV4} as ${ffrl_as_number};
 };
 protocol bgp ffrl_ber_b from uplink {
