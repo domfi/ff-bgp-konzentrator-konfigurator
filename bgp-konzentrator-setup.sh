@@ -336,7 +336,7 @@ for bb_endpoint in ${TUNNELENDPOINTS}; do
 	bar=${bb_endpoint}_GRE_BB_IPV4
 	eval $bar=\$${bar}
 	value=$(eval echo \$${bar})
-	value=$(myread "IPV4 Adresse für Tunnelendpunkt auf Backbone-Server" "${value}")
+	value=$(myread "IPV4 Adresse für Tunnelendpunkt auf Backbone-Server - bspw. 185.66.195.Y" "${value}")
 	eval $bar=$value
 
 	echo -en "\t" 
@@ -344,7 +344,7 @@ for bb_endpoint in ${TUNNELENDPOINTS}; do
 	bar=${bb_endpoint}_GRE_MY_IPV4
 	eval $bar=\$${bar}
 	value=$(eval echo \$${bar})
-	value=$(myread "IPV4 Adresse für Tunnelendpunk auf Konzentrator" "${value}") 
+	value=$(myread "IPV4 Adresse für Tunnelendpunk auf Konzentrator - bspw. 100.64.XYZ.A" "${value}") 
 	eval $bar=$value
 
 	echo -en "\t" 
@@ -352,7 +352,7 @@ for bb_endpoint in ${TUNNELENDPOINTS}; do
 	bar=${bb_endpoint}_GRE_MY_IPV6
 	eval $bar=\$${bar}
 	value=$(eval echo \$${bar})
-	value=$(myread "IPV6 Adresse auf Konzentrator" "${value}") 
+	value=$(myread "IPV6 Adresse auf Konzentrator - bspw. 2a03:2260:0:170::XYZ" "${value}") 
 	eval $bar=$value
 
 done
