@@ -100,6 +100,7 @@ iface tun-ffrl-uplink inet static
 	address ${my_ffrl_exit_ipv4}
 	netmask 255.255.255.255
 	pre-up ip link add \$IFACE type dummy
+	pre-up ip rule add from ${my_ffrl_exit_ipv4}/32 lookup 42
 	post-down ip link del \$IFACE
 
 # Konfiguration Backbone-Anbindung Berlin A
